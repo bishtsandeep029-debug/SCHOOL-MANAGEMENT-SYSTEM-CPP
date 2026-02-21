@@ -21,7 +21,6 @@ It allows management of students, teachers, results, and history logs using link
 - View Students
 
 ### 👤 User
-- View Students
 - Search Student
 - Print Result to File
 

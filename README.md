@@ -17,8 +17,10 @@ It allows management of students, teachers, results, and history logs using link
 - View All Students
 
 ### 👨‍🏫 Staff
-- Update Student Marks
+- search Student
 - View Students
+- View results
+
 
 ### 👤 User
 - Search Student

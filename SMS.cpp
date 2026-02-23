@@ -71,9 +71,9 @@ class staff {
   public:
     staff() {
         head = tail = NULL;
-    }
+     }
 
-    void addteacher(string name, int id, double salary, string subject) {
+     void addteacher(string name, int id, double salary, string subject) {
         Teacher* newteacher = new Teacher(name, id, salary, subject);
 
         if (head == NULL) {
@@ -82,29 +82,29 @@ class staff {
             tail->next = newteacher;
             tail = newteacher;
         }
-    }
+     }
 
      void displayteachers() {
-    if (head == NULL) {
+      if (head == NULL) {
         cout << "No teachers available!\n";
         return;
-    }
+     }
 
-    cout << "\n";
-    cout << "+" << string(78, '-') << "+\n";
+     cout << "\n";
+     cout << "+" << string(78, '-') << "+\n";
 
-    cout << "|"
+     cout << "|"
          << left << setw(18) << " Name"
          << "|" << setw(10) << " ID"
          << "|" << setw(15) << " Salary"
          << "|" << setw(30) << " Subject"
          << "|\n";
 
-    cout << "+" << string(78, '-') << "+\n";
+      cout << "+" << string(78, '-') << "+\n";
 
-    Teacher* temp = head;
+     Teacher* temp = head;
 
-    while (temp != NULL) {
+     while (temp != NULL) {
         cout << "|"
              << left << setw(18) << temp->name
              << "|" << setw(10) << temp->id
@@ -113,12 +113,12 @@ class staff {
              << "|\n";
 
         temp = temp->next;
-    }
+     }
 
-    cout << "+" << string(78, '-') << "+\n\n";
-   }
+       cout << "+" << string(78, '-') << "+\n\n";
+      }
 
-    void inputteachers() {
+     void inputteachers() {
         int count;
         cout << "Enter number of teachers to add: ";
         cin >> count;
@@ -142,10 +142,74 @@ class staff {
             getline(cin, subject);
 
             addteacher(name, id, salary, subject);
-        }
-    }
+           }
+           cout<<endl;
+           cout<<"TOTAL NUMBER OF TEACHER "<<count;
+          }
 
-    void writetofile() {
+         bool searchteacher(int key){
+                Teacher* temp = head;
+
+                while(temp!= NULL){
+                    if(temp->id == key){
+                         cout << "Teacher Found!\n";
+                         cout << "Name: " << temp->name << endl;
+                         cout << "ID: " << temp->id << endl;
+                         cout << "Salary: " << temp->salary << endl;
+                         cout << "Subject: " << temp->subject << endl;
+
+                         return true;
+                    }
+                     temp = temp->next;
+                }
+                return false;
+        }
+ 
+       bool deleteteacher(int key){
+         // case1
+         if(head == NULL){
+            cout<<"No Teacher Data is Available : ";
+            return false;
+         }
+         // case2
+          Teacher* temp = head;
+          Teacher* prev = NULL;
+         if(temp->id == key){
+            head = temp->next;
+
+            if(temp == tail){
+              tail = NULL;
+            }
+            delete temp;
+            cout<<"Delete Teacher Successfully : ";
+             return true;
+         }
+
+         //case 3
+         while(temp != NULL && temp->id != key){
+             prev =  temp;
+             temp = temp->next;
+         }
+         //if not found
+          if(temp == NULL){
+            cout<<"Teacher is not Found :";
+          }
+          
+          //delete node
+           prev->next = temp->next;
+
+           // tail update
+           if(temp == NULL){
+             tail = prev;
+              }
+           
+           delete temp;
+           cout<<"Teacher Delete Successfully : ";
+           return true;
+         
+      }
+
+     void writetofile() {
         ofstream file("teachers.txt");
         Teacher* temp = head;
 
@@ -158,9 +222,9 @@ class staff {
         }
 
         file.close();
-    }
+     }
 
-    void readfromfile() {
+     void readfromfile() {
         ifstream file("teachers.txt");
 
         if (!file) {
@@ -170,7 +234,6 @@ class staff {
 
         // clear current list
         head = tail = NULL;
-
         string name;
         int id;
         double salary;
@@ -184,7 +247,18 @@ class staff {
         }
 
         file.close();
-    }
+         }
+
+       ~staff(){
+        Teacher* temp = head ;
+         Teacher* next = NULL ;
+         while(temp != NULL){
+             next = temp->next;
+             delete temp;
+             temp = next;
+         }
+         
+       }
 };
 
 class History{
@@ -257,7 +331,18 @@ public:
         }
 
         file.close();
-    }
+     }
+         
+       ~historyrecord(){
+        History* temp = head ;
+        History* next = NULL ;
+         while(temp != NULL){
+             next = temp->next;
+             delete temp;
+             temp = next;
+         }
+       }
+     
 };
 
 class result : public student {
@@ -548,9 +633,9 @@ void printHeader(int subjects){
     }
   }
 
-}while(choice != 3);
+ }while(choice != 2);
   
-}   
+ }   
 
  void adminMenu(vector<result>& students,historyrecord& h,staff& s) {
     int choice;
@@ -560,10 +645,12 @@ void printHeader(int subjects){
         cout << "1. Add Student\n";
         cout << "2. Add Teacher\n";
         cout << "3. Delete Student\n";
-        cout << "4. View Students\n";
-        cout << "5. view Teachers\n";
-        cout << "6. view History\n";
-        cout << "7. Back\n";
+        cout << "4. Delete Teacher\n";
+        cout << "5. View Students\n";
+        cout << "6. view Teachers\n";
+        cout << "7. search teacher \n";
+        cout << "8. view History\n";
+        cout << "9. Back\n";
         cout << "Enter choice: ";
         cin >> choice;
 
@@ -601,9 +688,10 @@ void printHeader(int subjects){
         }
 
         case 2: {
+    
             s.inputteachers();
             s.writetofile();
-            h.addaction("NEW TWACHER ADDED");
+            h.addaction("NEW TEACHER ADDED");
             h.writetofile();
 
             break;
@@ -625,30 +713,54 @@ void printHeader(int subjects){
         }
 
         case 4:{
+              int id;
+              cout<<"Enter the ID of the teacher to delete";
+              cin>>id;
+
+              s.deleteteacher(id);
+              s.writetofile();
+              h.addaction("Delete Teacher with id ");
+              h.writetofile();
+              break;
+        }
+
+        case 5:{
             showStudents(students);
             break;
         }
            
-        case 5:{
+        case 6:{
               s.readfromfile();
               s.displayteachers();
                break;
         }
-        case 6:{
+
+        case 7 :{
+            int key;
+            cout<<"Enter the ID of the Teacher for search : ";
+            cin>>key;
+             if(!s.searchteacher(key)){
+               cout<<"Teacher not found ";
+           }
+            break;
+            }
+
+        case 8:{
             h.displayhistory();
+            break;
         }
 
-        case 7:
+        case 9:
             break;
 
         default:
             cout << "Invalid choice\n";
         }
 
-    } while(choice != 8);
+    } while(choice != 9);
 }
 
- void staffMenu(vector<result>students,staff &s,historyrecord& h) {
+ void staffMenu(vector<result>& students,staff &s,historyrecord& h) {
     int choice;
   
      do{
@@ -754,7 +866,7 @@ int role;
     }
     else if(role == 3){
         if(staffProtection())
-            staffMenu(students,s,h);
+         staffMenu(students,s,h);
     }
 
    } while(role != 4);

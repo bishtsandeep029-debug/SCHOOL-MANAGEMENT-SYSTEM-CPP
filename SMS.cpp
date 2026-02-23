@@ -1,5 +1,6 @@
 #include <iostream>
-#include<algorithm>
+#include <algorithm>
+#include <stack>
 #include <vector>
 #include <iomanip>
 #include <fstream>
@@ -179,9 +180,9 @@ class staff {
 
             if(temp == tail){
               tail = NULL;
-            }
+             }
             delete temp;
-            cout<<"Delete Teacher Successfully : ";
+            cout<<"Teacher with ID "<< key <<" Delete Successfully : "<<endl;
              return true;
          }
 
@@ -192,19 +193,20 @@ class staff {
          }
          //if not found
           if(temp == NULL){
-            cout<<"Teacher is not Found :";
+            cout<<"Teacher with ID "<< key<<" not Found :";
+            return false;
           }
           
           //delete node
            prev->next = temp->next;
 
            // tail update
-           if(temp == NULL){
+           if(temp == tail){
              tail = prev;
               }
            
            delete temp;
-           cout<<"Teacher Delete Successfully : ";
+           cout<<"Teacher with ID "<< key <<" Delete Successfully : "<<endl;
            return true;
          
       }
@@ -355,7 +357,8 @@ public:
     void calculateResult() {
 
        if(n==0){
-           cout << "No subjects entered! Cannot calculate result.\n";
+           cout << "No subjects entered! \n";
+           return ;
         }
 
        total = 0;
@@ -455,18 +458,20 @@ public:
   }
 };
 
-  void deletestudent(vector<result> &students, int key) {
+  bool deletestudent(vector<result> &students, int key ,result& undostack) {
      for (int i = 0; i < students.size(); i++) {
 
         if (students[i].rollno == key) {
+              undostack = students[i];
             students.erase(students.begin() + i);
+
             cout << "Student with roll number " << key << " deleted successfully.\n";
 
             // rewrite file after deletion
             ofstream file("students.txt");
             if (!file) {
                 cout << "Error opening file!" << endl;
-                return;
+                return false;
             }
 
             for (auto &r : students) {
@@ -474,11 +479,16 @@ public:
             }
 
             file.close();
-            return;
+            return true;
+
+            cout << "Student not found!\n";
+            return false;
+            
         }
     }
 
     cout << "Student not found!\n";
+
 }
 
 bool protection(){
@@ -630,6 +640,7 @@ void printHeader(int subjects){
 
         default:
             cout << "Invalid choice\n";
+            break;
     }
   }
 
@@ -637,7 +648,7 @@ void printHeader(int subjects){
   
  }   
 
- void adminMenu(vector<result>& students,historyrecord& h,staff& s) {
+ void adminMenu(vector<result>& students,historyrecord& h,staff& s , stack<result>& undostack) {
     int choice;
 
     do {
@@ -650,7 +661,8 @@ void printHeader(int subjects){
         cout << "6. view Teachers\n";
         cout << "7. search teacher \n";
         cout << "8. view History\n";
-        cout << "9. Back\n";
+        cout << "9. undo student\n";
+        cout << "10. Back\n";
         cout << "Enter choice: ";
         cin >> choice;
 
@@ -704,12 +716,18 @@ void printHeader(int subjects){
 
             if(students.empty()){
                 cout << "No student data available!\n";
-            } else {
-                deletestudent(students, key);
-                h.addaction("Admin deleted student Roll No: " + to_string(key));
-                h.writetofile();
-            }
-            break;
+
+              } else {
+                result temp;
+                  if(deletestudent(students, key,temp)){
+                     undostack.push(temp);
+                     cout<<"Deleted successfully!\n";
+                   
+                     h.addaction("Admin deleted student Roll No: " + to_string(key));
+                     h.writetofile();
+                       }
+                        }
+                  break;
         }
 
         case 4:{
@@ -717,10 +735,11 @@ void printHeader(int subjects){
               cout<<"Enter the ID of the teacher to delete";
               cin>>id;
 
-              s.deleteteacher(id);
-              s.writetofile();
-              h.addaction("Delete Teacher with id ");
-              h.writetofile();
+             if( s.deleteteacher(id)){
+                 s.writetofile();
+                 h.addaction("Delete Teacher with id ");
+                 h.writetofile();
+             }
               break;
         }
 
@@ -730,7 +749,6 @@ void printHeader(int subjects){
         }
            
         case 6:{
-              s.readfromfile();
               s.displayteachers();
                break;
         }
@@ -750,14 +768,36 @@ void printHeader(int subjects){
             break;
         }
 
-        case 9:
+        case 9 :{
+
+            if(undostack.empty()){
+              cout << "Nothing to undo!\n";
+             }
+           else{
+             result restoreStudent = undostack.top();
+             undostack.pop();
+
+              students.push_back(restoreStudent);
+
+             cout << "Undo successful! Student restored.\n";
+
+             h.addaction("Undo last deleted student");
+             h.writetofile();
+               }         
+
+             break;
+             }
+        
+
+        case 10:
             break;
 
         default:
             cout << "Invalid choice\n";
+            break;
         }
 
-    } while(choice != 9);
+    } while(choice != 10);
 }
 
  void staffMenu(vector<result>& students,staff &s,historyrecord& h) {
@@ -817,6 +857,13 @@ void printHeader(int subjects){
         }
                 break;
         }
+          case 4:{
+          break;
+
+          default:
+            cout << "Invalid choice\n";
+            break;
+         }
     }
   } while(choice != 4);
 }
@@ -824,10 +871,12 @@ void printHeader(int subjects){
 int main(){
     vector<result> students;
     historyrecord h;
+    stack<result> undostack;
      staff s;
 
 // Load history once
      h.readfromfile();
+     s.readfromfile();
 
 // Load students once
    ifstream fin("students.txt");
@@ -859,7 +908,7 @@ int role;
 
     if(role == 1){
         if(protection())
-            adminMenu(students, h,s);
+            adminMenu(students, h,s,undostack);
     }
     else if(role == 2){
         userMenu(students);

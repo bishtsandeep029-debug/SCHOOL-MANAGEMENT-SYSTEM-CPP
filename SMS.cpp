@@ -123,7 +123,8 @@ class staff {
         int count;
         cout << "Enter number of teachers to add: ";
         cin >> count;
-
+         
+         cin.ignore(numeric_limits<streamsize>::max(), '\n');
         for (int i = 0; i < count; i++) {
             string name;
             int id;
@@ -132,14 +133,16 @@ class staff {
 
             cout << "\nEnter details of teacher " << i + 1 << ":\n";
             cout << "Enter the Name of the teacher : ";
-            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+           
             getline(cin, name);
             cout << " Enter the ID of teacher " << name << ": ";
             cin >> id;
+
             cout << " Enter the Salary of teacher " << name << ": ";
             cin >> salary;
+            
+             cin.ignore(numeric_limits<streamsize>::max(), '\n');
             cout << " Enter the Subject of teacher " << name << ": ";
-            cin.ignore(numeric_limits<streamsize>::max(), '\n');
             getline(cin, subject);
 
             addteacher(name, id, salary, subject);
@@ -226,30 +229,33 @@ class staff {
         file.close();
      }
 
-     void readfromfile() {
+    void readfromfile() {
         ifstream file("teachers.txt");
 
-        if (!file) {
-            cout << "No teacher file found.\n";
-            return;
-        }
+        if (!file) return;
 
-        // clear current list
-        head = tail = NULL;
-        string name;
-        int id;
-        double salary;
-        string subject;
+         head = tail = NULL;
+
+         string name;
+          int id;
+          double salary;
+         string subject;
 
         while (getline(file, name)) {
-            file >> id >> salary;
-            file.ignore(numeric_limits<streamsize>::max(), '\n');
-            getline(file, subject);
-            addteacher(name, id, salary, subject);
+
+          file >> id;
+           file.ignore();
+
+          file >> salary;
+           file.ignore();
+
+           getline(file, subject);
+
+           addteacher(name, id, salary, subject);
         }
 
         file.close();
-         }
+          }
 
        ~staff(){
         Teacher* temp = head ;
@@ -354,11 +360,16 @@ public:
     int total;
     bool ispass;
 
+    result() : grade('F'), percentage(0.0), total(0), ispass(false) {}
+
     void calculateResult() {
 
        if(n==0){
-           cout << "No subjects entered! \n";
-           return ;
+           total = 0;
+           percentage = 0.0;
+           ispass = false;
+           grade = 'F';
+           return;
         }
 
        total = 0;
@@ -407,19 +418,23 @@ public:
 
     if(!getline(file, name)) return false;
 
-    file >> rollno >> n;
+    // If the name was blank, it could be an empty line. Treat as end of records.
+    if (name.empty()) return false;
+
+    // Try to read rollno and n. If it fails, the record is malformed.
+    if (!(file >> rollno >> n)) return false;
+
     file.ignore(numeric_limits<streamsize>::max(), '\n');
 
     marks.resize(n);
     for(int i = 0; i < n; i++){
-        file >> marks[i];
+        // If reading marks fails, the record is malformed.
+        if (!(file >> marks[i])) return false;
     }
     file.ignore(numeric_limits<streamsize>::max(), '\n');
 
     // recalc
-      if(n > 0){
-        calculateResult();
-      }
+      calculateResult();
        return true;
   }
   
@@ -458,16 +473,15 @@ public:
   }
 };
 
-  bool deletestudent(vector<result> &students, int key ,result& undostack) {
-     for (int i = 0; i < students.size(); i++) {
+  bool deletestudent(vector<result> &students, int key ,result& undoStudent) {
+    for (int i = 0; i < students.size(); i++) {
 
         if (students[i].rollno == key) {
-              undostack = students[i];
+            undoStudent = students[i];
             students.erase(students.begin() + i);
 
             cout << "Student with roll number " << key << " deleted successfully.\n";
 
-            // rewrite file after deletion
             ofstream file("students.txt");
             if (!file) {
                 cout << "Error opening file!" << endl;
@@ -480,16 +494,12 @@ public:
 
             file.close();
             return true;
-
-            cout << "Student not found!\n";
-            return false;
-            
         }
     }
 
     cout << "Student not found!\n";
-
-}
+    return false;
+   }
 
 bool protection(){
     string password;
@@ -565,6 +575,10 @@ void printHeader(int subjects){
 
  template<typename T>
  int binarysearch(vector<T>& students, int key){
+        if(students.empty()){
+         cout << "No student data available!\n";
+          return -1;
+          }
        int st = 0; int end = students.size() - 1;
          while(st <= end){
 
@@ -585,21 +599,47 @@ void printHeader(int subjects){
             return -1;
     }
 
- void showStudents(vector<result>& students){
+  bool showStudents(vector<result>& students){
     if(students.empty()){
-        cout << "No student data available!\n";
-        return;
+        cout << "\nNo student data available!\n";
+        return false;
+       }
+
+      sortstudent(students);
+      int max_n = 0;
+    if (!students.empty()) {
+        for (const auto& s : students) {
+            if (s.n > max_n) {
+                max_n = s.n;
+            }
+        }
+    }
+      printHeader(max_n);
+
+    for(auto &s : students) {
+        cout << "|" << left << setw(24) << s.name
+             << "|" << setw(11) << s.rollno;
+
+        int i = 0;
+        for (; i < s.n; i++)
+            cout << "|" << setw(12) << s.marks[i];
+        
+        for (; i < max_n; i++) // pad with empty subject columns
+            cout << "|" << setw(12) << " ";
+
+        cout << "|" << setw(11) << s.total
+             << "|" << setw(11) << fixed << setprecision(2) << s.percentage
+             << "|" << setw(11) << (s.ispass ? "Pass" : "Fail")
+             << "|" << setw(11) << s.grade
+             << "|\n";
     }
 
-    printHeader(students[0].n);
-    sortstudent(students);
-
-    for(auto &s : students)
-        s.display();
 
     cout << "\nTotal students: "
          << students.size() << endl;
-  }
+
+         return true;
+    }
 
  void userMenu(vector<result>& students) {
     int choice;
@@ -769,24 +809,30 @@ void printHeader(int subjects){
         }
 
         case 9 :{
-
-            if(undostack.empty()){
+             if(undostack.empty()){
               cout << "Nothing to undo!\n";
+                 }
+             else{
+                  result restoreStudent = undostack.top();
+                  undostack.pop();
+
+                students.push_back(restoreStudent);
+                sortstudent(students);
+
+        // rewrite file
+            ofstream file("students.txt");
+              for(auto &r : students){
+              r.writetofile(file);
              }
-           else{
-             result restoreStudent = undostack.top();
-             undostack.pop();
+            file.close();
 
-              students.push_back(restoreStudent);
+            cout << "Undo successful! Student restored.\n";
 
-             cout << "Undo successful! Student restored.\n";
-
-             h.addaction("Undo last deleted student");
-             h.writetofile();
-               }         
-
-             break;
-             }
+           h.addaction("Undo last deleted student");
+            h.writetofile();
+         }
+          break;
+        }
         
 
         case 10:
@@ -794,7 +840,7 @@ void printHeader(int subjects){
 
         default:
             cout << "Invalid choice\n";
-            break;
+            
         }
 
     } while(choice != 10);
@@ -862,7 +908,7 @@ void printHeader(int subjects){
 
           default:
             cout << "Invalid choice\n";
-            break;
+            
          }
     }
   } while(choice != 4);

@@ -122,6 +122,8 @@ class staff {
         int count;
         cout << "Enter number of teachers to add: ";
         cin >> count;
+  
+         cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
         for (int i = 0; i < count; i++) {
             string name;
@@ -131,14 +133,16 @@ class staff {
 
             cout << "\nEnter details of teacher " << i + 1 << ":\n";
             cout << "Enter the Name of the teacher : ";
-            cin.ignore(numeric_limits<streamsize>::max(), '\n');
             getline(cin, name);
+
             cout << " Enter the ID of teacher " << name << ": ";
             cin >> id;
+
             cout << " Enter the Salary of teacher " << name << ": ";
             cin >> salary;
-            cout << " Enter the Subject of teacher " << name << ": ";
+
             cin.ignore(numeric_limits<streamsize>::max(), '\n');
+            cout << " Enter the Subject of teacher " << name << ": ";
             getline(cin, subject);
 
             addteacher(name, id, salary, subject);
@@ -210,44 +214,48 @@ class staff {
       }
 
      void writetofile() {
-        ofstream file("teachers.txt");
-        Teacher* temp = head;
+      ofstream file("teachers.txt");
 
-        while (temp != NULL) {
-            file << temp->name << "\n"
-                 << temp->id << " "
-                 << temp->salary << " "
-                 << temp->subject << "\n";
-            temp = temp->next;
-        }
+     Teacher* temp = head;
 
-        file.close();
+     while (temp != NULL) {
+        file << temp->name << "\n";
+        file << temp->id << "\n";
+        file << temp->salary << "\n";
+        file << temp->subject << "\n";
+        temp = temp->next;
      }
 
-     void readfromfile() {
+    file.close();
+      }
+
+         void readfromfile() {
         ifstream file("teachers.txt");
 
-        if (!file) {
-            cout << "No teacher file found.\n";
-            return;
-        }
+        if (!file) return;
 
-        // clear current list
-        head = tail = NULL;
-        string name;
-        int id;
-        double salary;
-        string subject;
+         head = tail = NULL;
+
+         string name;
+          int id;
+          double salary;
+         string subject;
 
         while (getline(file, name)) {
-            file >> id >> salary;
-            file.ignore(numeric_limits<streamsize>::max(), '\n');
-            getline(file, subject);
-            addteacher(name, id, salary, subject);
+
+          file >> id;
+           file.ignore();
+
+          file >> salary;
+           file.ignore();
+
+           getline(file, subject);
+
+           addteacher(name, id, salary, subject);
         }
 
         file.close();
-         }
+          }
 
        ~staff(){
         Teacher* temp = head ;
@@ -321,16 +329,18 @@ public:
         file.close();
     }
 
-    void readfromfile() {
+    bool readfromfile() {
         ifstream file("history.txt");
-        if (!file) return;
+        if (!file) return false;
 
         string line;
         while (getline(file, line)) {
             addaction(line);
+            
         }
 
         file.close();
+        return true;
      }
          
        ~historyrecord(){
@@ -352,10 +362,10 @@ public:
     int total;
     bool ispass;
 
-    void calculateResult() {
+    bool calculateResult() {
 
-       if(n==0){
-           cout << "No subjects entered! Cannot calculate result.\n";
+       if(n<=0){
+           return false;
         }
 
        total = 0;
@@ -370,11 +380,16 @@ public:
      else if(percentage >= 60) grade = 'C';
      else if(percentage >= 40) grade = 'D';
       else grade = 'F';
+
+      return true;
      }
 
     void getdata() override {
         student::getdata();
-        calculateResult();
+       
+       if(!calculateResult()){
+        cout << "Result not calculated.\n";
+          } 
     }
 
     void display() override {
@@ -400,25 +415,36 @@ public:
     file << "\n";
       }
 
-    bool readfromfile(ifstream &file){     // read data from file
+    bool readfromfile(ifstream &file){
 
-    if(!getline(file, name)) return false;
+    if(!getline(file, name))
+        return false;
 
-    file >> rollno >> n;
+    if(name.empty())
+        return false;
+
+    if(!(file >> rollno >> n))
+        return false;
+
+    if(n < 0 || n > 20)
+        return false;
+
     file.ignore(numeric_limits<streamsize>::max(), '\n');
 
     marks.resize(n);
+
     for(int i = 0; i < n; i++){
-        file >> marks[i];
+        if(!(file >> marks[i]))
+            return false;
     }
+
     file.ignore(numeric_limits<streamsize>::max(), '\n');
 
-    // recalc
-      if(n > 0){
-        calculateResult();
-      }
-       return true;
-  }
+    if(!calculateResult())
+        return false;
+
+    return true;
+}
   
   void printResultToFile() {
     string filename = "result_" + to_string(rollno) + ".txt";
@@ -680,6 +706,7 @@ void printHeader(int subjects){
                 students.push_back(r);
                }
             
+
             h.addaction("Admin added student(s)");
             h.writetofile();
             file.close();
@@ -688,14 +715,14 @@ void printHeader(int subjects){
         }
 
         case 2: {
-    
+             
             s.inputteachers();
-            s.writetofile();
-            h.addaction("NEW TEACHER ADDED");
+              s.writetofile();
+             h.addaction("NEW TEACHER ADDED");
             h.writetofile();
-
             break;
-        }
+             }
+        
 
         case 3: {
             int key;
